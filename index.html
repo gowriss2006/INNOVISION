@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chandas Detector</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            background: url('image_791105.jpeg') no-repeat center center fixed; 
+            background-size: cover;
+            /* Changed to solid black for better visibility */
+            color: #000000; 
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #000000; /* Thicker black border */
+            background: transparent;
+            backdrop-filter: blur(3px); 
+        }
+        h1 {
+            text-align: center;
+            font-size: 3.5em; /* Larger Title */
+            margin-bottom: 20px;
+            color: #000000;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 900; /* Extra bold */
+            font-size: 1.6em; /* Larger label */
+            color: #000000;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+        textarea {
+            width: 100%;
+            height: 140px;
+            padding: 15px;
+            border: 3px solid #000000;
+            border-radius: 8px;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.4em; /* Larger input text */
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.5); /* Slightly more opaque for readability */
+            resize: vertical;
+            color: #000000;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 18px 40px;
+            background: #000000; /* Black button to match theme */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 50px;
+            font-size: 1.5em;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        button:hover {
+            transform: scale(1.05);
+            background: #333333;
+        }
+        .results {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .result-field {
+            background: transparent;
+            border: 3px solid #000000;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .result-field h3 {
+            margin-top: 0;
+            color: #000000;
+            font-size: 1.8em; /* Larger sub-headers */
+            font-weight: 900;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+        .result-field p {
+            font-family: 'Courier New', Courier, monospace;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border: 2px solid #000000;
+            font-size: 1.3em; /* Larger output text */
+            font-weight: 900; /* Bold results */
+            color: #000000;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5em; }
+            label { font-size: 1.2em; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chandas Detector</h1>
+        
+        <div class="input-group">
+            <label for="verseInput">Enter verse (transliterated Sanskrit):</label>
+            <textarea id="verseInput" placeholder="Type your Sanskrit verse here..."></textarea>
+        </div>
+        
+        <button onclick="analyzeVerse()">Analyze Now</button>
+        
+        <div class="results">
+            <div class="result-field">
+                <h3>Syllables</h3>
+                <p id="syllablesOutput">-</p>
+            </div>
+            <div class="result-field">
+                <h3>Pattern</h3>
+                <p id="patternOutput">-</p>
+            </div>
+            <div class="result-field">
+                <h3>Chandas</h3>
+                <p id="meterOutput">-</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cleanText(text) {
+            return text.replace(/[^a-zA-Z \n]/g, '').toLowerCase();
+        }
+
+        function splitSyllables(word) {
+            const vowels = "aeiou";
+            const syllables = [];
+            let current = "";
+            let i = 0;
+            while (i < word.length) {
+                const ch = word[i];
+                current += ch;
+                if (vowels.includes(ch)) {
+                    if (i + 1 < word.length) {
+                        const nextCh = word[i + 1];
+                        if ((ch === 'a' && 'aiu'.includes(nextCh)) ||
+                            (ch === 'e' && nextCh === 'e') ||
+                            (ch === 'o' && nextCh === 'o')) {
+                            current += nextCh;
+                            i += 1;
+                        }
+                    }
+                    let j = i + 1;
+                    let consonantsAhead = "";
+                    while (j < word.length && !vowels.includes(word[j])) {
+                        consonantsAhead += word[j];
+                        j += 1;
+                    }
+                    if (consonantsAhead.length === 0) {
+                        syllables.push(current);
+                        current = "";
+                    } else if (consonantsAhead.length === 1) {
+                        if (j >= word.length) {
+                            current += consonantsAhead;
+                            syllables.push(current);
+                            current = "";
+                            i = j;
+                        } else {
+                            syllables.push(current);
+                            current = "";
+                        }
+                    } else {
+                        if (j >= word.length) {
+                            current += consonantsAhead;
+                            syllables.push(current);
+                            current = "";
+                            i = j;
+                        } else {
+                            current += consonantsAhead[0];
+                            syllables.push(current);
+                            current = "";
+                            i += 1;
+                        }
+                    }
+                }
+                i += 1;
+            }
+            if (current) {
+                if (syllables.length > 0) {
+                    syllables[syllables.length - 1] += current;
+                } else {
+                    syllables.push(current);
+                }
+            }
+            return syllables;
+        }
+
+        function isGuru(syllable) {
+            const longVowels = ['aa', 'ee', 'oo', 'ai', 'au'];
+            for (const lv of longVowels) {
+                if (syllable.includes(lv)) return true;
+            }
+            if (syllable && !'aeiou'.includes(syllable[syllable.length - 1])) return true;
+            return false;
+        }
+
+        function getPattern(syllables) {
+            return syllables.map(s => isGuru(s) ? "G" : "L");
+        }
+
+        function identifyMeter(pattern) {
+            const pStr = pattern.join('');
+            const length = pStr.length;
+
+            if (length === 8) {
+                if (pStr[4] === "L" && pStr[5] === "G") return "Anushtubh";
+            }
+            if (length === 11) {
+                if (pStr.startsWith("GGL")) return "Indravajra";
+                if (pStr.startsWith("LGL")) return "Upendravajra";
+            }
+            return "Unknown";
+        }
+
+        function analyzeVerse() {
+            const input = document.getElementById('verseInput').value;
+            const text = cleanText(input);
+            const verseLines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+            let syllablesText = "";
+            let patternText = "";
+            let meterText = "";
+
+            for (let i = 0; i < verseLines.length; i++) {
+                const line = verseLines[i];
+                const words = line.split(/\s+/);
+                let flatSyllables = [];
+                for (const w of words) {
+                    flatSyllables = flatSyllables.concat(splitSyllables(w));
+                }
+
+                const pattern = getPattern(flatSyllables);
+                const meter = identifyMeter(pattern);
+
+                syllablesText += `L${i + 1}: ${flatSyllables.join('-')}\n`;
+                patternText += `L${i + 1}: ${pattern.join(' ')}\n`;
+                meterText += `L${i + 1}: ${meter}\n`;
+            }
+
+            document.getElementById('syllablesOutput').textContent = syllablesText || "-";
+            document.getElementById('patternOutput').textContent = patternText || "-";
+            document.getElementById('meterOutput').textContent = meterText || "-";
+        }
+    </script>
+</body>
+</html>
